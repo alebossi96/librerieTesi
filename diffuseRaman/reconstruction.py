@@ -25,7 +25,7 @@ class Reconstruction:
             remove_first_line: bool = True,
             ref_cal_wn : Tuple[int, int] = None,
             ref_cal_wl : Tuple[int, int] = None,
-            ref_bas : int = 32,
+            ref_bas : int = None,
             cake_cutting = False,
             normalize = False,
             filename_bkg = None,
@@ -43,6 +43,8 @@ class Reconstruction:
         self.n_basis = self.data.n_basis
         self.cake_cutting = cake_cutting
         self.normalize = normalize
+        if ref_bas is None:
+            ref_bas = self.n_basis
         if ref_cal_wn is not None:
             ref_cal_wl = ref_cal_wn
             ref_cal_wl[1] = 1/(1/ lambda_0 - ref_cal_wn[1] / 1e7)
@@ -178,7 +180,11 @@ class Reconstruction:
         output = []
         for i in range(self.data.n_points):
             output.append(rec[:,i])
+        output = np.array(output)
         return output
+    def normalize_rec(self, const = 1.):
+        self.recons/=self.data.tot_counts()
+        self.recons*= const
     def find_maximum_idx(self):
         """
         Find the position of the maximum of the spectrograph. Useful during calibration.
