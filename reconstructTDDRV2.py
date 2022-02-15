@@ -198,11 +198,12 @@ class reconstructTDDR:
         
         self.sz = self.data.dim()
         self.execute()    
-        self.axis(ref_cal_wl, ref_bas)
         if removeFirstLine:
-            self.start_range = 1
-        else:
-            self.start_range = 0
+            ref_cal_wl[0] += 1
+        self.axis(ref_cal_wl, ref_bas)
+
+
+        self.start_range = 0
         self.stop_range = len(self.wavelength())
     def M(self) -> np.array:
         dim = self.data.getnBasis()
@@ -291,7 +292,7 @@ class reconstructTDDR:
             if self.removeFirstLine:
                 return recons[1:,:]
             return recons
-        norm_spect = recons[ self.start_range:self.stop_range,:]/self.bkg_spectr[self.start_range:self.stop_range, np.newaxis]
+        norm_spect = recons[ self.start_range:self.stop_range,:]#TODO/self.bkg_spectr[self.start_range:self.stop_range, np.newaxis]
         return norm_spect
     def find_maximum_idx(self):
         return np.where(self.spectrograph() == np.amax(self.spectrograph()))[0][0]
@@ -339,6 +340,6 @@ class reconstructTDDR:
             ref_cal_wl = self.ref_cal_wl,
             ref_bas = self.nBasis)
         self.bkg_spectr = rec.spectrograph()/np.max(rec.spectrograph())
-        limit = 0.5
+        limit = 0.2
         self.start_range = np.argmax(self.bkg_spectr > limit)
         self.stop_range = np.argmin(self.bkg_spectr[(self.start_range+10):] > limit) +self.start_range+10

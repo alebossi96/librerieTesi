@@ -126,6 +126,29 @@ class latex:
         if save:
             plt.savefig(saveas+"."+ self.ext)
         if show:
-            plt.show()
+            plt.show()        
         plt.close()
-    
+    def multipleLineSubPlots_multipleline(self, x, y, data, legend, title,y_um, xLabels, x_um, saveas, is_setLabel = True, vertical_lines = [], show = False, save = True):
+        sz = len(y)
+        #TODO se è solo 1 cosa devo fare??
+        fig, axs = plt.subplots(sz)
+        fig.suptitle(title)
+        
+        for i in range(sz):
+            for j,el in enumerate(data):
+                axs[i].plot(x, el[i], label = legend[j])
+            axs[i].tick_params(labelbottom=False)
+            if is_setLabel:
+                axs[i].set_ylabel(str(int(y[i]*100)/100)+ " "+ y_um)
+            #TODO migliorare l'arrotondamento!
+            for el in vertical_lines:
+                axs[i].axvline(el)
+            axs[i].legend()
+        axs[sz-1].tick_params(labelbottom=True)
+        plt.xlabel(xLabels + "["+ x_um+"]")
+        if save:
+            plt.savefig(saveas+"."+ self.ext)
+        if show:
+            plt.show()        
+        plt.close()
+
