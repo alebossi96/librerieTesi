@@ -45,37 +45,40 @@ class Plot:
              normalize = False,
              ylim_min = None,
              ylim_max = None,
+             axs = None
              ) -> str:
-
+        if axs is None:
+            axs = plt
+        
         for (x,y,legend) in zip(self.x,self.y,self.legend):
             y = np.array(y)
             if normalize:
                 const = np.max(y)
             else:
                 const = 1
-            plt.plot(x,y/const, label = legend)
+            axs.plot(x,y/const, label = legend)
         if show_legend:
-            plt.legend()
+            axs.legend()
         if is_log:
-            plt.yscale('log')
-        plt.xlabel(xlabel+"["+x_um+"]")
-        plt.ylabel("counts [a.u.]")
-        plt.title(title)
+            axs.yscale('log')
+        axs.set_xlabel(xlabel+"["+x_um+"]")
+        axs.set_ylabel("counts [a.u.]")
+        axs.set_title(title)
         if show_vertical_line:
             for el in self.vertical_lines:
-                plt.axvline(el[0], color = el[1])
+                axs.axvline(el[0], color = el[1])
         plt.tight_layout()
         if ylim_min is not None:
-            plt.ylim(bottom = ylim_min)
+            axs.set_ylim(bottom = ylim_min)
         if ylim_max is not None:
-            plt.ylim(top = ylim_max)
+            axs.set_ylim(top = ylim_max)
             
         if save:
             plt.savefig(self.folder+saveas+"." +self.ext)
         if show:
             plt.show()
         
-        plt.close()
+        #plt.close()
         return saveas
     def multiple_line_subplots(self, y, y_um ='', y_digit = 0,
                                     xlabel = '', x_um = '',
