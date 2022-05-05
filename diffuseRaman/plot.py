@@ -1,6 +1,7 @@
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
+
 class Plot:
     def __init__(self, ext: str = "png", folder = ''):
         self.ext =ext
@@ -39,10 +40,13 @@ class Plot:
              is_log: bool = False,
              show = True,
              save = True,
-             show_legend = False,
+             show_legend = True,
              show_vertical_line = True,
-             normalize = False
+             normalize = False,
+             ylim_min = None,
+             ylim_max = None,
              ) -> str:
+
         for (x,y,legend) in zip(self.x,self.y,self.legend):
             y = np.array(y)
             if normalize:
@@ -60,10 +64,17 @@ class Plot:
         if show_vertical_line:
             for el in self.vertical_lines:
                 plt.axvline(el[0], color = el[1])
+        plt.tight_layout()
+        if ylim_min is not None:
+            plt.ylim(bottom = ylim_min)
+        if ylim_max is not None:
+            plt.ylim(top = ylim_max)
+            
         if save:
             plt.savefig(self.folder+saveas+"." +self.ext)
         if show:
             plt.show()
+        
         plt.close()
         return saveas
     def multiple_line_subplots(self, y, y_um ='', y_digit = 0,
@@ -75,7 +86,9 @@ class Plot:
                                      normalize = False, fix_height = False):
         sz = len(y)
         #TODO se è solo 1 cosa devo fare??
-        fig, axs = plt.subplots(sz)
+
+        fig, axs = plt.subplots(sz, figsize = (6,10))
+        
         fig.suptitle(title)
         if fix_height:
             max_val = np.max(self.y)*1.1
@@ -88,10 +101,11 @@ class Plot:
                 axs[i].plot(x, data[i]/norm, label = legend)
                 axs[i].tick_params(labelbottom=False)
                 if fix_height:
-                    axs[i].axis(ymax = max_val)#ylim(top = max_val)
+                    axs[i].yaxis.set_ticklabels([])
+                    axs[i].set_ylim([0,int(max_val)])#ylim(top = max_val)
                 if is_setLabel:
                     print(round(y[i]))
-                    axs[i].set_ylabel(str(round(y[i], y_digit))+ " "+ y_um)
+                    axs[i].set_ylabel(str(round(y[i], y_digit))+ " "+ y_um, rotation=0.,  labelpad = 20)
                 if show_vertical_line:
                     for el in self.vertical_lines:
                         axs[i].axvline(el[0], color = el[1])
@@ -100,6 +114,8 @@ class Plot:
         axs[sz-1].tick_params(labelbottom=True)
         plt.xlabel(xlabel + "["+ x_um+"]")
         plt.title(title)
+        plt.tight_layout()
+        plt.subplots_adjust(hspace = 0)
         if save:
             plt.savefig(self.folder + saveas+"."+ self.ext)
         if show:
@@ -121,11 +137,12 @@ class Plot:
              save = True ) -> str:
         plt.rcParams['pcolor.shading'] ='nearest'
         plt.pcolormesh(x, y,data)
-        plt.xlabel( xlabel+" ["+x_um+"]")
-        plt.ylabel(y_label+ "["+y_um+"]")
+        plt.xlabel( xlabel+" [$"+x_um+"$]")
+        plt.ylabel(y_label+ "[$"+y_um+"$]")
         plt.title(plot_title)
         plt.colorbar()
         #TODO consigliabile non usare eps. perchè pesante in 2D!
+        plt.tight_layout()
         if save:
             plt.savefig(self.folder + saveas+"."+ self.ext)
         if show:
@@ -134,6 +151,7 @@ class Plot:
         return saveas
     def multiple_line_subplots_2(self, x, data, title, xlabel, x_um, saveas, show = False, save = True):
         sz = len(data)
+        
         for i in range(sz):
             mx = max(data[i])
             off = i*1
