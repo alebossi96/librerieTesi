@@ -40,11 +40,59 @@ class Plot:
              is_log: bool = False,
              show = True,
              save = True,
-             show_legend = True,
+             show_legend = False,
              show_vertical_line = True,
              normalize = False,
              ylim_min = None,
              ylim_max = None,
+             ylabel = "counts [a.u.]"
+             ) -> str:
+        axs = plt
+        
+        for (x,y,legend) in zip(self.x,self.y,self.legend):
+            y = np.array(y)
+            if normalize:
+                const = np.max(y)
+            else:
+                const = 1
+            axs.plot(x,y/const, label = legend)
+        if show_legend:
+            axs.legend()
+        if is_log:
+            axs.yscale('log')
+        axs.xlabel(xlabel+"["+x_um+"]")
+        axs.ylabel(ylabel)
+        axs.title(title)
+        if show_vertical_line:
+            for el in self.vertical_lines:
+                axs.axvline(el[0], color = el[1])
+        plt.tight_layout()
+        if ylim_min is not None:
+            axs.ylim(bottom = ylim_min)
+        if ylim_max is not None:
+            axs.ylim(top = ylim_max)
+            
+        if save:
+            plt.savefig(self.folder+saveas+"." +self.ext)
+        if show:
+            plt.show()
+        if axs == plt:
+            plt.close()
+        return saveas
+    def plot_data_axs(self,
+             xlabel: str = '',
+             x_um: str = '',
+             title: str = '',
+             saveas: str = '',
+             is_log: bool = False,
+             show = True,
+             save = True,
+             show_legend = False,
+             show_vertical_line = True,
+             normalize = False,
+             ylim_min = None,
+             ylim_max = None,
+             ylabel = "counts",
              axs = None
              ) -> str:
         if axs is None:
@@ -60,9 +108,9 @@ class Plot:
         if show_legend:
             axs.legend()
         if is_log:
-            axs.yscale('log')
+            axs.set_yscale('log')
         axs.set_xlabel(xlabel+"["+x_um+"]")
-        axs.set_ylabel("counts [a.u.]")
+        axs.set_ylabel(ylabel +"[a.u.]")
         axs.set_title(title)
         if show_vertical_line:
             for el in self.vertical_lines:
@@ -77,8 +125,8 @@ class Plot:
             plt.savefig(self.folder+saveas+"." +self.ext)
         if show:
             plt.show()
-        
-        #plt.close()
+        if axs == plt:
+            plt.close()
         return saveas
     def multiple_line_subplots(self, y, y_um ='', y_digit = 0,
                                     xlabel = '', x_um = '',
@@ -86,7 +134,8 @@ class Plot:
                                     is_setLabel = True, show = True, 
                                     save = False, show_legend = False,
                                      show_vertical_line = True,
-                                     normalize = False, fix_height = False):
+                                     normalize = False, fix_height = False, 
+                                     labelpad = 30):
         sz = len(y)
         #TODO se è solo 1 cosa devo fare??
 
@@ -107,8 +156,14 @@ class Plot:
                     axs[i].yaxis.set_ticklabels([])
                     axs[i].set_ylim([0,int(max_val)])#ylim(top = max_val)
                 if is_setLabel:
-                    print(round(y[i]))
-                    axs[i].set_ylabel(str(round(y[i], y_digit))+ " "+ y_um, rotation=0.,  labelpad = 20)
+                    #print(round(y[i]))
+                    if y_digit == 0:
+                        time = str(int(y[i]))
+                    elif y_digit == -1:
+                        time = y[i]
+                    else:
+                        time = str(round(y[i], y_digit))
+                    axs[i].set_ylabel(time+ " "+ y_um, rotation=0.,  labelpad = labelpad)
                 if show_vertical_line:
                     for el in self.vertical_lines:
                         axs[i].axvline(el[0], color = el[1])
@@ -137,20 +192,53 @@ class Plot:
              plot_title: str,
              saveas: str,
              show = False,
-             save = True ) -> str:
-        plt.rcParams['pcolor.shading'] ='nearest'
-        plt.pcolormesh(x, y,data)
-        plt.xlabel( xlabel+" [$"+x_um+"$]")
-        plt.ylabel(y_label+ "[$"+y_um+"$]")
-        plt.title(plot_title)
-        plt.colorbar()
+             save = True
+             ) -> str:
+        axs = plt
+        #plt.rcParams['pcolor.shading'] ='nearest'
+        axs.pcolormesh(x, y,data)
+        axs.xlabel( xlabel+" [$"+x_um+"$]")
+        axs.ylabel(y_label+ "[$"+y_um+"$]")
+        axs.title(plot_title)
+        #plt.colorbar()
         #TODO consigliabile non usare eps. perchè pesante in 2D!
         plt.tight_layout()
         if save:
             plt.savefig(self.folder + saveas+"."+ self.ext)
         if show:
             plt.show()
-        plt.close()
+        if axs == plt:
+            plt.close()
+        return saveas
+    def plot_data2D_axs(self,
+             x: np.array,
+             y: np.array,
+             data: np.array,
+             xlabel: str,
+             x_um: str,
+             y_label: str,
+             y_um: str,
+             plot_title: str,
+             saveas: str,
+             show = False,
+             save = True,
+             axs = None ) -> str:
+        if axs is None:
+            axs = plt
+        #plt.rcParams['pcolor.shading'] ='nearest'
+        axs.pcolormesh(x, y,data)
+        axs.set_xlabel( xlabel+" [$"+x_um+"$]")
+        axs.set_ylabel(y_label+ "[$"+y_um+"$]")
+        axs.set_title(plot_title)
+        #plt.colorbar()
+        #TODO consigliabile non usare eps. perchè pesante in 2D!
+        plt.tight_layout()
+        if save:
+            plt.savefig(self.folder + saveas+"."+ self.ext)
+        if show:
+            plt.show()
+        if axs == plt:
+            plt.close()
         return saveas
     def multiple_line_subplots_2(self, x, data, title, xlabel, x_um, saveas, show = False, save = True):
         sz = len(data)

@@ -9,6 +9,9 @@ from sklearn import linear_model
 from librerieTesi.diffuseRaman import raw_data as rd
 from librerieTesi.diffuseRaman import core
 import tesi_stefan.core.SignalsAndSystems as sis
+from sympy import fwht
+import math
+import matplotlib.pyplot as plt
 RAST = "rast"
 HAD = "had"
 class Reconstruction:
@@ -31,6 +34,7 @@ class Reconstruction:
             filename_bkg = None,
             n_banks_bkg= None,
             ):
+        #TODO non capisco cosa può sevire ref_bas
         self.data = data
         self.rast_had = rast_had
         self.lambda_0 = lambda_0
@@ -69,14 +73,16 @@ class Reconstruction:
         self.execute()
         if remove_first_line and ref_cal_wl is not None:
             ref_cal_wl[0] += 1
-        self.axis(ref_cal_wl, ref_bas)
+        self.ref_cal_wl = ref_cal_wl
+        self.ref_bas = ref_bas
+        self.axis()
         self.start_range = 0
         self.stop_range = len(self.wavelength())
     def M(self) -> np.array:
         """
         Generates the reconstruction matrix
         """
-        dim = len(self.data)
+        dim = self.n_basis#len(self.data)
         if self.cake_cutting:
             H = 0.5*(hadamardOrdering.cake_cutting(dim) + np.ones((dim,dim)))
         else:
@@ -98,17 +104,57 @@ class Reconstruction:
             self.recons = self.data.tot
         else:
             sys.exit("controlla se hai scritto RAST o HAD")
+    def seq(self, n):
+        """
+        Copied from https://www.apt-browse.org/browse/ubuntu/trusty/universe/amd64/octave-signal/1.2.2-1build1/file/usr/share/octave/packages/signal-1.2.2/private/__fwht_opts__.m
+        """
+        res = []
+        lenght = math.log2(n)
+        for i in range(n):
+            idx_bin = [int(a) for a in format(i,'b')]
+            lgth_to_add = int(lenght-len(idx_bin))
+            idx_bin = [0]*lgth_to_add+idx_bin
+            idx_bin_a = idx_bin[0:-1]
+            idx_bin_b = idx_bin[1:]
+            new_idx_bin = [idx_bin[0]]
+            tmp = [el%2 for el in (np.array(idx_bin_a)+np.array(idx_bin_b)).tolist()]
+            for el in tmp:
+                new_idx_bin.append(el)
+            bin_res = 0
+            for i in range(len(new_idx_bin)):
+                bin_res+= new_idx_bin[i]*2**i
+            res.append(bin_res)
+        return res
+
     def reconstruct_hadamard(self) -> None:
         """
         Reconstruct from the hadamard basis into the usual wavelength-wavenumber base.
         """
-        self.reg.fit(self.M() ,self.data.tot)
-        recons1 = self.reg.coef_
-        self.recons= recons1
-    def axis(self, ref_cal : Tuple[int, int] = None, ref_bas : int = 32) -> None:
+        if self.data.use_michele_data:
+            pos = np.arange(0,len(self.data.tot-1), 2)
+            neg = pos + 1
+            to_invert = self.data.tot[pos]-self.data.tot[neg]
+            ordering = self.seq(len(to_invert))
+            self.n_basis = len(to_invert)
+            #recons1 =  np.array(fwht(to_invert), dtype = 'float64')
+            M = self.M()[ordering]
+            M_ = 2*M-1
+            self.reg.fit(M_ ,to_invert)
+            recons1 = self.reg.coef_
+            self.recons = recons1
+            #self.recons= recons1[ordering].T
+        else:
+            to_invert = self.data.tot
+            #print(self.recons.shape)
+            self.reg.fit(self.M() ,to_invert)
+            recons1 = self.reg.coef_
+            self.recons = recons1
+    def axis(self) -> None:
         """
         From the calibration data it generates the wavenumber - wavelength axis.
         """
+        ref_cal = self.ref_cal_wl
+        ref_bas = self.ref_bas
         self.calibration_wl(ref_cal, ref_bas)
         self.calibration_wn()
     def calibration_wl(self, ref_cal_wl : Tuple[int, int] = None, ref_bas : int = 32) -> None:
@@ -267,3 +313,28 @@ class Reconstruction:
         return new.recons-b.recons
     def __sum__(self):
         return sum(self.spectrograph())
+class ReconstructionMichele(Reconstruction):
+    def __init__(self,
+            data: rd.RawData,
+            rast_had: str,
+            lambda_0: int,
+            method: str="lsmr",
+            alpha: float=0,
+            remove_first_line: bool = True,
+            ref_cal_wn = None,
+            ref_position = None,
+            cake_cutting = False,
+            normalize = False,
+            filename_bkg = None,
+            n_banks_bkg= None,
+            ):
+        self.ref_cal_wn = ref_cal_wn
+        self.ref_position = ref_position
+        super().__init__(data = data, rast_had =  rast_had, lambda_0  =  lambda_0, method = method, alpha = alpha, remove_first_line = remove_first_line,
+             cake_cutting = cake_cutting, normalize = normalize, filename_bkg = filename_bkg, n_banks_bkg = n_banks_bkg)
+    def axis(self):
+        fit = np.polyfit(self.ref_position, self.ref_cal_wn, deg = 1)
+        self.wn = np.polyval(fit, np.arange(0, self.n_basis))
+        self.wl = np.zeros((self.n_basis,))
+        for i in range(self.n_basis):
+            self.wl[i] = 1/(1/self.lambda_0-self.wn[i]/1e7)

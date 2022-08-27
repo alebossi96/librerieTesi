@@ -118,6 +118,8 @@ class Multiplot:
             self.Indata = self.Indata.rename(columns={old:new})
         self.pdf = PdfPages(PATH_OP+pdf_name+".pdf")
         self.plot()   
+        
+        
     def read_data(self, filename = None, data_numpy = None, data_titles = None):
         """
         If we override self.read_data into the function that we want we can use this program to plot from any source
@@ -179,6 +181,9 @@ class Multiplot:
                             self.plot_single(data_pivot =self.data[(self.data[self.Columns[idx]]==c)],
                                           outer = outer[cont], fig = fig, c = c, idx = idx, col = col, row = row)
                         else:
+                            print(self.data[(self.data[self.Columns[idx]]==c)&
+                                         (self.data[self.page[idx]]==page)])
+                            kjkjk=1
                             self.plot_single(data_pivot =self.data[(self.data[self.Columns[idx]]==c)&
                                          (self.data[self.page[idx]]==page)],
                                           outer = outer[cont], fig = fig, c = c, idx = idx, col = col, row = row)
@@ -241,8 +246,8 @@ class Multiplot:
         Plots the data.
         """
         axs = plt.Subplot(fig, inner)
-        idx_plot = np.arange(0,len(pivot.index), step = self.subsample)
-        axs.plot(pivot.index[idx_plot],pivot.values[idx_plot],marker='.',label=label)
+        axs.plot(pivot.index,pivot.values,marker='.',label=label)
+        print(label)
         self.plot_reference(axs)
         fig.add_subplot(axs) 
         if self.vertical_lines is not None and self.vertical_lines[idx] is not None:  
@@ -282,15 +287,18 @@ class Multiplot:
                 else:
                     self.plot_inner(fig = fig, inner = inner[i], pivot = pivot, label = "%s"%r+", %s"%c, idx = idx)
             else:
+                #np.arange( self.subsample[idx]
                 pivot = pd.pivot_table(data_pivot,
                                        columns = self.multigraph[idx],
                                        index = self.x_axis[idx],
                                        values = y_subplot[idx])
-                self.plot_inner(fig = fig, inner = inner[i], pivot = pivot, label = pivot.columns, idx = idx)
+                idx_multi = np.arange(0,len(pivot),self.subsample[idx] )
+                #pivot = pivot.sample(self.subsample[idx],axis = 1).sort_values('time', axis = 1)
+                self.plot_inner(fig = fig, inner = inner[i], pivot = pivot[idx_multi], label = pivot.columns, idx = idx)
             
             #TODO: have labells everywhere
 
-            
+            #TODO add here self.reference that will be called in a new class
             if self.row_title[idx] == True and col==0:
                 self.set_ylabel(fig = fig, text = "%s"%self.Columns[idx]+" \n= " +"%s"%c, row = row, outer = outer)
                 #outer.set_ylabel("%s"%self.Columns[idx]+" \n= " +"%s"%c)
@@ -337,6 +345,10 @@ class Multiplot:
         )
         fig.patches.append(rect)  
     def remove_duplicate_order_list(self, el):
+        #TODO use unique?
         return sorted(list(set(el)))
     def plot_reference(self, axs):
         pass
+     
+        
+

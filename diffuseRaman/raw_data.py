@@ -5,6 +5,7 @@ from  librerieTesi.diffuseRaman import core
 from scipy.signal import peak_widths
 import numpy as np
 import  sdtfile
+import matplotlib.pyplot as plt
 class RawData:
     """
     This class contains the Raw measurement obtained from a .sdt file.
@@ -18,6 +19,7 @@ class RawData:
             compress: bool = True,
             tot_banks = None,
             background_time = None):
+        self.use_michele_data = False
         self.n_banks =n_banks
         self.n_basis = n_basis
         if n_meas == -1: # se non specificato è uguale a n_basis, (caso compressioni)
@@ -28,7 +30,7 @@ class RawData:
         self.n_points = len(self.time)
         self.compress = compress
         self.accumulate()
-        if background_time:
+        if background_time is not None:
             self.remove_bkg(background_time[0], background_time[1])
     def read_sdt(self, filename: str, tot_banks = None ) -> Tuple[np.array,List]:
         """
@@ -76,6 +78,12 @@ class RawData:
         Returns the total counts recorded by the TCSPC board.
         """
         return np.sum(self.tot)
+    def find_idx_start(self, rel_th):
+        i = 0
+        th_start = rel_th * max(self.tot_time_domain())
+        while self.tot_time_domain()[i]< th_start:
+            i+=1
+        return i
     def tot_time_domain(self):
         """
         Returns the time-domain dtof for every wavelengths.
