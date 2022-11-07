@@ -24,12 +24,12 @@ def conv_matrix(signal, number_of_points):
     for i in range(number_of_points):
         M_out[i][i:] = signal[:(number_of_points-i)]
     return M_out.T
-def get_data_FIT(filename, source, output, delim = "\t"):
-    df = pd.read_csv(filename, delimiter = delim)
+def get_data_FIT(filename, source, output, delimiter = "\t"):
+    df = pd.read_csv(filename, delimiter = delimiter)
     for name, param in source:
         df = df[df[name] == param]
     out = []
     for name in output:
-        out.append(df[name])
+        out.append(np.array(df[name]))
     out = tuple(out)
     return out
