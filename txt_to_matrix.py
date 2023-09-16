@@ -1,19 +1,35 @@
 import numpy as np
 import pandas as pd
-import copy
-
+from librerieTesi import fill_mat_module
 def fill_mat(dims, data, col, output_col):
-    mat_dim = dims[:-1] + (len(output_col),) #appende (len(output_col),)
+    mat_dim = dims + [len(output_col)] #appende (len(output_col),)
     mat = np.zeros(mat_dim)
     if len(dims) == 0:
         value = []
         value = [data[el].values[0] for el in output_col]
         return np.array(value)
     el_columns = np.sort(np.unique(data[col[0]]))#sorted(list(set(data[col[0]])))#order
-    for i in range(dims[0]):
-        selected = data[data[col[0]] == el_columns[i]]
-        mat[i] = fill_mat( dims[1:], selected, col[1:], output_col)
-    return mat   
+    for i, el in enumerate(el_columns):
+        selected = data[data[col[0]] == el]
+        mat[i] = fill_mat(dims[1:], selected, col[1:], output_col)
+    return mat
+
+"""
+def fill_mat(dims, data, col, output_col):
+    mat_dim = dims + [len(output_col)]
+    mat = np.zeros(mat_dim)
+    stack = [((), data)]
+    while stack:
+        indices, selected = stack.pop()
+        if len(dims) == 0:
+            mat[indices] = [selected[output_col[j]].values[0] for j in range(len(output_col))]
+        else:
+            el_columns = np.sort(np.unique(selected[col[0]]))
+            for j, el in enumerate(el_columns):
+                subset = selected[selected[col[0]] == el]
+                stack.append((indices + (j,), subset))
+    return mat
+"""
 def txt_to_matrix(filename, delimiter, output_col):
     df = pd.read_csv(filename, delimiter = delimiter)
     col_name = df.columns
@@ -27,6 +43,7 @@ def txt_to_matrix(filename, delimiter, output_col):
     mat = np.zeros(dims)
     data = df
     mat = fill_mat(dims, data, col_name, output_col)
+    #mat = fill_mat_module.fill_mat(dims, data, col_name, output_col)
     value_col = []
     for el in col_name:
         value_col.append(sorted(list(set(data[el]))))

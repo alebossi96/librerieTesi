@@ -112,6 +112,16 @@ class RawData:
         idx_stop = idx_start + length
         self.tot = self.tot[:,idx_start:idx_stop]
         self.n_points = length
+    def cut_no2power(self, t_start, t_stop):
+        """
+        Selects the desired time-range.
+        """
+        idx_start = core.time_to_idx(self.time, t_start)
+        idx_stop = core.time_to_idx(self.time, t_stop)
+        length = idx_stop - idx_start
+        self.time = self.time[:length]
+        self.tot = self.tot[:,idx_start:idx_stop]
+        self.n_points = length
     def t_gate_bin(self, num_t_gates):
         """
         Bins the gate into the desired number of gates.

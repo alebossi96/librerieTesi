@@ -20,6 +20,8 @@ def fwhm(axis: np.array,data: np.array) -> float:
     return fwhm
     
 def conv_matrix(signal, number_of_points):
+    #questo metodo funziona solo con x che parte da 0
+    #sarebbe il caso di generalizzare
     M_out = np.zeros((number_of_points,number_of_points))
     for i in range(number_of_points):
         M_out[i][i:] = signal[:(number_of_points-i)]
