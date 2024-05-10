@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from librerieTesi import fill_mat_module
+#from librerieTesi import fill_mat_module
 def fill_mat(dims, data, col, output_col):
     mat_dim = dims + [len(output_col)] #appende (len(output_col),)
     mat = np.zeros(mat_dim)
@@ -30,9 +30,13 @@ def fill_mat(dims, data, col, output_col):
                 stack.append((indices + (j,), subset))
     return mat
 """
-def txt_to_matrix(filename, delimiter, output_col):
+def txt_to_matrix(filename, delimiter, output_col, remove_duplicate_col = False):
     df = pd.read_csv(filename, delimiter = delimiter)
+    if remove_duplicate_col:
+        df = df.T.drop_duplicates().T
+        print("warning: removing duplicate columns!")  
     col_name = df.columns
+    print(col_name)
     for el in output_col:
         col_name = [x for x in col_name if el not  in x]
     col_name = [x for x in col_name if 'Unnamed' not  in x]

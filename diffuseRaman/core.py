@@ -2,6 +2,7 @@ from typing import List, Tuple
 from scipy.signal import peak_widths
 import numpy as np
 import pandas as pd
+from scipy.stats import linregress
 def time_to_idx(array,time):
     i = 0
     while array[i]<=time:
@@ -15,9 +16,18 @@ def wavenumber_to_idx(array,wn):
        
 def fwhm(axis: np.array,data: np.array) -> float:
     pos0 = np.where(data == np.amax(data))[0][0]
-    fwhm_idx = int(peak_widths(data, [pos0])[0]/2)
-    fwhm =  (axis[pos0+fwhm_idx] - axis[pos0-fwhm_idx]) #sarà metà da una parte e metà altra anche se questo è decisamente sbagliato
-    return fwhm
+    if pos0 == 0:
+        data_copy = data
+        data = np.zeros(2*len(data_copy))
+        data[:len(data_copy)] = data_copy[::-1]
+        data[len(data_copy):] = data_copy
+        pos0 = np.where(data == np.amax(data))[0][0]
+    fwhm_idx = peak_widths(data, [pos0])[0]
+    #lin reg
+    slope, _, _, _, _ = linregress(np.arange(0, len(axis)), axis)
+    fwhm = slope*fwhm_idx
+    #fwhm =  (axis[pos0+fwhm_idx] - axis[pos0-fwhm_idx]) #sarà metà da una parte e metà altra anche se questo è decisamente sbagliato
+    return fwhm[0]
     
 def conv_matrix(signal, number_of_points):
     #questo metodo funziona solo con x che parte da 0
